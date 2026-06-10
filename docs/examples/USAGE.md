@@ -69,4 +69,18 @@ specs only. Other language bindings are out of scope.
 
 ## Verified on
 
-_(dogfood results recorded here after Task 11.)_
+**Setup half — verified end-to-end (2026-06-10, @playwright/test 1.60, Node 22):**
+- Real `npx playwright init-agents --loop=claude` output, both single-package and
+  monorepo (`apps/e2e`) layouts.
+- `pw-setup.mjs` overlays all three real agent files (`playwright-test-{generator,
+  healer,planner}.md`): pins `model: sonnet` / `effort: high`, injects the managed
+  house-rules block, generator-only write-path rule. Idempotent (byte-identical re-run).
+- MCP wiring writes the correct launch-dir `.mcp.json`:
+  `npx playwright run-test-mcp-server --headless` for single-package, plus `-c apps/e2e`
+  for the monorepo (hoisted to the repo root).
+- Verify gate runs the real `npx playwright test`: passing spec → exit 0 / `PASS`,
+  failing spec → exit 1 / `FAIL`.
+
+**Authoring loop (`/pw-author`) — pending:** requires a Claude Code session with the
+Test MCP loaded (relaunch after `/pw-setup`) and a running app. Run it in your live
+environment (StratSense `apps/e2e` + a vanilla repo) and record the PASS results here.
