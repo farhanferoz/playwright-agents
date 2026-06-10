@@ -106,6 +106,20 @@ healer    → runs the spec in debug mode, repairs failures (auto-chained on fai
 VERIFY    → plugin runs `<config.testCommand> <new spec>` and reports the real exit code
 ```
 
+**Intent:** the loop runs **autonomously end-to-end** — `/pw-author` drives plan →
+generate → heal → verify without per-step human prompting. If the platform cannot
+dispatch sub-agents from a slash command, the command falls back to *guided* mode:
+it instructs the session to invoke each agent in order. The user-visible contract is the
+same either way.
+
+**Verify ↔ heal ordering (INV-3).** The healer runs first (debug-mode, MCP-driven) and
+repairs what it can. VERIFY is the plugin's own *terminal gate*: it runs
+`<config.testCommand> <new spec>` for a deterministic exit code. If VERIFY is **red**, it
+re-enters the healer **at most once more** (bounded retry, default 1), then VERIFY runs
+again; a second red is reported as a failure (the spec is left on disk with the failure
+output) rather than looped indefinitely. The retry bound is configurable
+(`healRetries`, default 1). VERIFY is the only thing that declares success.
+
 The verification step (INV-3) is the plugin's, not the MCP's — it converts the indirect
 agent signal into a deterministic green/red.
 
@@ -158,8 +172,14 @@ All keys optional; an empty/absent file uses defaults.
 {
   "testCommand": "pnpm test",          // deterministic verification run
   "testDir": "tests",                  // where specs live
-  "auth": { "mode": "storageState",    // or "seed"
+
+  // auth — pick ONE mode:
+  "auth": { "mode": "storageState",    //   reuse an existing saved-login setup
             "setupPath": "tests/auth.setup.ts" },
+  //   ... or sign in via the generated seed:
+  // "auth": { "mode": "seed", "seedPath": "tests/seed.spec.ts" },
+
+  "healRetries": 1,                    // VERIFY-red → re-heal at most N more times
   "agents": {                          // per-role model/effort overrides
     "planner":   { "model": "sonnet", "effort": "high" },
     "generator": { "model": "sonnet", "effort": "high" },
