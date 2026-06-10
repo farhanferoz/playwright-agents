@@ -37,6 +37,23 @@ test('buildServerSpec headless:false omits the flag', () => {
   assert.deepEqual(spec.args, ['playwright', 'run-test-mcp-server']);
 });
 
+test('buildServerSpec uses binPath directly when given (single-package)', () => {
+  const spec = buildServerSpec({ binPath: 'node_modules/.bin/playwright', relE2e: '.' });
+  assert.equal(spec.command, 'node_modules/.bin/playwright');
+  assert.deepEqual(spec.args, ['run-test-mcp-server', '--headless']);
+});
+
+test('buildServerSpec binPath + monorepo adds -c (non-hoisted pnpm case)', () => {
+  const spec = buildServerSpec({ binPath: 'stratsense/apps/e2e/node_modules/.bin/playwright', relE2e: 'stratsense/apps/e2e' });
+  assert.equal(spec.command, 'stratsense/apps/e2e/node_modules/.bin/playwright');
+  assert.deepEqual(spec.args, ['run-test-mcp-server', '--headless', '-c', 'stratsense/apps/e2e']);
+});
+
+test('buildServerSpec binPath takes precedence over generatedDoc', () => {
+  const spec = buildServerSpec({ generatedDoc: GENERATED, binPath: 'x/node_modules/.bin/playwright', relE2e: 'x' });
+  assert.equal(spec.command, 'x/node_modules/.bin/playwright'); // not 'npx'
+});
+
 test('mergeServerIntoMcpJson adds the server, preserving others', () => {
   const existing = { mcpServers: { other: { command: 'x' } } };
   const merged = mergeServerIntoMcpJson(existing, SERVER_KEY, serverSpec);

@@ -19,14 +19,25 @@ const FALLBACK_SERVER = { command: 'npx', args: ['playwright', 'run-test-mcp-ser
  *     server's cwd is the repo root, so it must be pointed at the e2e project explicitly.
  * Idempotent in its inputs: never duplicates a flag already present.
  */
-export function buildServerSpec({ generatedDoc = null, relE2e = '.', headless = true } = {}) {
-  const base = generatedDoc?.mcpServers?.[SERVER_KEY] ?? FALLBACK_SERVER;
-  const args = [...(base.args ?? [])];
+export function buildServerSpec({ generatedDoc = null, relE2e = '.', headless = true, binPath = null } = {}) {
+  let command, args;
+  if (binPath) {
+    // A direct path to the e2e's playwright binary resolves from ANY launch dir. This
+    // is required for non-hoisted pnpm monorepos: launched at the repo root, a bare
+    // `npx playwright` (what init-agents generates) can't find playwright, so the MCP
+    // server fails to start. The binary path sidesteps PATH/npx resolution entirely.
+    command = binPath;
+    args = ['run-test-mcp-server'];
+  } else {
+    const base = generatedDoc?.mcpServers?.[SERVER_KEY] ?? FALLBACK_SERVER;
+    command = base.command ?? FALLBACK_SERVER.command;
+    args = [...(base.args ?? [])];
+  }
   if (headless && !args.includes('--headless')) args.push('--headless');
   if (relE2e !== '.' && !args.includes('-c') && !args.includes('--config')) {
     args.push('-c', relE2e);
   }
-  return { command: base.command ?? FALLBACK_SERVER.command, args };
+  return { command, args };
 }
 
 export function mergeServerIntoMcpJson(doc, key, serverSpec) {

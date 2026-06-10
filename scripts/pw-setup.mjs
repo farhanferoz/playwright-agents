@@ -8,12 +8,10 @@ import { wireMcp, buildServerSpec } from './lib/mcp.mjs';
 
 function log(msg) { process.stdout.write(`[pw-setup] ${msg}\n`); }
 
-function findAgentsDir(launchDir) {
-  const candidates = [
-    path.join(launchDir, '.claude', 'agents'),
-    path.join(launchDir, 'apps', 'e2e', '.claude', 'agents'),
-  ];
-  return candidates.find((d) => fs.existsSync(d)) ?? null;
+function findAgentsDir(e2eDir) {
+  // Agents always live under the e2e package that init-agents ran in.
+  const d = path.join(e2eDir, '.claude', 'agents');
+  return fs.existsSync(d) ? d : null;
 }
 
 function main() {
@@ -24,7 +22,7 @@ function main() {
   const e2eDir = process.argv[2] ? path.resolve(process.argv[2]) : launchDir;
 
   // 1. Ensure agents exist (run init-agents if not).
-  let agentsDir = findAgentsDir(launchDir);
+  let agentsDir = findAgentsDir(e2eDir);
   if (!agentsDir) {
     log('no agents found — running `npx playwright init-agents --loop=claude`');
     const r = spawnSync('npx', ['playwright', 'init-agents', '--loop=claude'], { cwd: e2eDir, stdio: 'inherit' });
@@ -44,7 +42,11 @@ function main() {
   let generatedDoc = null;
   try { generatedDoc = JSON.parse(fs.readFileSync(path.join(e2eDir, '.mcp.json'), 'utf8')); }
   catch (e) { if (e.code !== 'ENOENT') throw e; }
-  const serverSpec = buildServerSpec({ generatedDoc, relE2e });
+  // Prefer the e2e's own playwright binary (launch-dir-relative) so the MCP server
+  // resolves even when launched from a parent dir in a non-hoisted pnpm monorepo.
+  const binRel = path.join(relE2e, 'node_modules', '.bin', 'playwright');
+  const binPath = fs.existsSync(path.join(launchDir, binRel)) ? binRel : null;
+  const serverSpec = buildServerSpec({ generatedDoc, relE2e, binPath });
   const mcp = wireMcp({ launchDir, serverSpec });
   log(`MCP wired → ${mcp.file} as '${mcp.server}'`);
 
