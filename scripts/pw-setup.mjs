@@ -4,7 +4,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { loadConfig } from './lib/config.mjs';
 import { applyOverlay } from './lib/overlay.mjs';
-import { wireMcp } from './lib/mcp.mjs';
+import { wireMcp, buildServerSpec } from './lib/mcp.mjs';
 
 function log(msg) { process.stdout.write(`[pw-setup] ${msg}\n`); }
 
@@ -37,12 +37,14 @@ function main() {
   const touched = applyOverlay(agentsDir, config);
   log(`overlay applied to: ${touched.map((t) => `${t.role}${t.changed ? '*' : ''}`).join(', ') || '(none)'}`);
 
-  // 3. MCP wiring. serverSpec mirrors the init-agents-generated .mcp.json entry.
+  // 3. MCP wiring. Reuse the entry init-agents actually generated in the e2e dir as the
+  //    source of truth, adapting it for the launch dir (headless + monorepo -c). This
+  //    self-corrects if Playwright changes the base command in a future release.
   const relE2e = path.relative(launchDir, e2eDir) || '.';
-  const serverSpec = {
-    command: path.join(relE2e, 'node_modules', '.bin', 'playwright'),
-    args: ['run-test-mcp-server', '--headless', '-c', relE2e],
-  };
+  let generatedDoc = null;
+  try { generatedDoc = JSON.parse(fs.readFileSync(path.join(e2eDir, '.mcp.json'), 'utf8')); }
+  catch (e) { if (e.code !== 'ENOENT') throw e; }
+  const serverSpec = buildServerSpec({ generatedDoc, relE2e });
   const mcp = wireMcp({ launchDir, serverSpec });
   log(`MCP wired → ${mcp.file} as '${mcp.server}'`);
 

@@ -1,9 +1,41 @@
 // scripts/lib/mcp.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeServerIntoMcpJson, wireMcp, SERVER_KEY } from './mcp.mjs';
+import { mergeServerIntoMcpJson, wireMcp, buildServerSpec, SERVER_KEY } from './mcp.mjs';
 
 const serverSpec = { command: 'playwright', args: ['run-test-mcp-server', '--headless', '-c', 'apps/e2e'] };
+
+// The real entry init-agents generates (confirmed against @playwright/test 1.60).
+const GENERATED = { mcpServers: { 'playwright-test': { command: 'npx', args: ['playwright', 'run-test-mcp-server'] } } };
+
+test('buildServerSpec reuses the generated command, adds --headless for single-package', () => {
+  const spec = buildServerSpec({ generatedDoc: GENERATED, relE2e: '.' });
+  assert.equal(spec.command, 'npx');
+  assert.deepEqual(spec.args, ['playwright', 'run-test-mcp-server', '--headless']); // no -c for single-package
+});
+
+test('buildServerSpec adds -c <relE2e> for a monorepo (hoisted to launch dir)', () => {
+  const spec = buildServerSpec({ generatedDoc: GENERATED, relE2e: 'apps/e2e' });
+  assert.deepEqual(spec.args, ['playwright', 'run-test-mcp-server', '--headless', '-c', 'apps/e2e']);
+});
+
+test('buildServerSpec falls back when no generated doc is present', () => {
+  const spec = buildServerSpec({ generatedDoc: null, relE2e: '.' });
+  assert.equal(spec.command, 'npx');
+  assert.deepEqual(spec.args, ['playwright', 'run-test-mcp-server', '--headless']);
+});
+
+test('buildServerSpec never duplicates flags already present', () => {
+  const doc = { mcpServers: { 'playwright-test': { command: 'npx', args: ['playwright', 'run-test-mcp-server', '--headless', '-c', 'apps/e2e'] } } };
+  const spec = buildServerSpec({ generatedDoc: doc, relE2e: 'apps/e2e' });
+  assert.equal((spec.args.filter((a) => a === '--headless')).length, 1);
+  assert.equal((spec.args.filter((a) => a === '-c')).length, 1);
+});
+
+test('buildServerSpec headless:false omits the flag', () => {
+  const spec = buildServerSpec({ generatedDoc: GENERATED, relE2e: '.', headless: false });
+  assert.deepEqual(spec.args, ['playwright', 'run-test-mcp-server']);
+});
 
 test('mergeServerIntoMcpJson adds the server, preserving others', () => {
   const existing = { mcpServers: { other: { command: 'x' } } };
