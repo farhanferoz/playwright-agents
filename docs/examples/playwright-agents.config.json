@@ -1,0 +1,12 @@
+{
+  "testCommand": "pnpm test",
+  "testDir": "apps/e2e/tests",
+  "auth": { "mode": "storageState", "setupPath": "apps/e2e/tests/auth.setup.ts" },
+  "healRetries": 1,
+  "agents": {
+    "planner": { "model": "sonnet", "effort": "high" },
+    "generator": { "model": "sonnet", "effort": "high" },
+    "healer": { "model": "sonnet", "effort": "high" }
+  },
+  "houseRules": []
+}
