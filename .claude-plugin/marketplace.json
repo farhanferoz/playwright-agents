@@ -1,0 +1,11 @@
+{
+  "name": "playwright-agents",
+  "owner": { "name": "Farhan Feroz" },
+  "plugins": [
+    {
+      "name": "playwright-agents",
+      "source": "./",
+      "description": "Wrap Playwright's test agents with pinned model/effort, MCP wiring, and a real verification run."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "name": "playwright-agents",
+  "version": "0.1.0",
+  "description": "Wrap Playwright's first-party test agents: pin model/effort, wire the Test MCP into the project's .mcp.json, and verify generated specs with a real test run.",
+  "author": { "name": "Farhan Feroz" },
+  "homepage": "https://github.com/farhanferoz/playwright-agents"
+}
