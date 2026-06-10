@@ -81,6 +81,6 @@ specs only. Other language bindings are out of scope.
 - Verify gate runs the real `npx playwright test`: passing spec → exit 0 / `PASS`,
   failing spec → exit 1 / `FAIL`.
 
-**Authoring loop (`/pw-author`) — pending:** requires a Claude Code session with the
-Test MCP loaded (relaunch after `/pw-setup`) and a running app. Run it in your live
-environment (StratSense `apps/e2e` + a vanilla repo) and record the PASS results here.
+**Authoring loop (`/pw-author`):** requires a Claude Code session with the
+Test MCP loaded (relaunch after `/pw-setup`) and a running app. Run it against your
+Playwright e2e project.
