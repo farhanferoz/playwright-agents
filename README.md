@@ -120,8 +120,7 @@ defaults. Values are **deep-merged**; arrays **replace**. Full example:
 
 The default policy is uniform **Sonnet / high** for all three roles. The point isn't the
 specific value — it's that effort is **explicit and pinned**, so a sub-agent never rides
-the session effort up to `xhigh`/`max`. The rationale for each setting is in the
-[design spec](docs/specs/2026-06-10-playwright-agents-design.md).
+the session effort up to `xhigh`/`max`.
 
 ## Monorepos
 
@@ -195,7 +194,7 @@ skills/e2e-authoring/SKILL.md
 scripts/
   pw-setup.mjs   pw-verify.mjs  # orchestrators
   lib/{config,overlay,mcp,verify}.mjs (+ *.test.mjs)
-docs/                          # design spec, plan, usage, example config
+docs/examples/                 # usage walkthrough + example config
 ```
 
 ## Development
