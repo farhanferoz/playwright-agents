@@ -27,7 +27,9 @@ function main() {
     log('no agents found — running `npx playwright init-agents --loop=claude`');
     const r = spawnSync('npx', ['playwright', 'init-agents', '--loop=claude'], { cwd: e2eDir, stdio: 'inherit' });
     if ((r.status ?? 1) !== 0) { log('init-agents failed'); process.exit(1); }
-    agentsDir = findAgentsDir(launchDir);
+    // init-agents ran in e2eDir, so that's where the agents were just created —
+    // re-looking-up from launchDir would miss them on a fresh monorepo setup.
+    agentsDir = findAgentsDir(e2eDir);
   }
   if (!agentsDir) { log('could not locate .claude/agents after init'); process.exit(1); }
 
