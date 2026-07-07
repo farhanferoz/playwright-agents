@@ -44,9 +44,9 @@ test('buildServerSpec uses binPath directly when given (single-package)', () => 
 });
 
 test('buildServerSpec binPath + monorepo adds -c (non-hoisted pnpm case)', () => {
-  const spec = buildServerSpec({ binPath: 'stratsense/apps/e2e/node_modules/.bin/playwright', relE2e: 'stratsense/apps/e2e' });
-  assert.equal(spec.command, 'stratsense/apps/e2e/node_modules/.bin/playwright');
-  assert.deepEqual(spec.args, ['run-test-mcp-server', '--headless', '-c', 'stratsense/apps/e2e']);
+  const spec = buildServerSpec({ binPath: 'acme-app/apps/e2e/node_modules/.bin/playwright', relE2e: 'acme-app/apps/e2e' });
+  assert.equal(spec.command, 'acme-app/apps/e2e/node_modules/.bin/playwright');
+  assert.deepEqual(spec.args, ['run-test-mcp-server', '--headless', '-c', 'acme-app/apps/e2e']);
 });
 
 test('buildServerSpec binPath takes precedence over generatedDoc', () => {
