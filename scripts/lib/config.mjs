@@ -47,3 +47,26 @@ export function loadConfig(repoRoot, { fs: fsmod = fs } = {}) {
   }
   return deepMerge(DEFAULTS, userConfig);
 }
+
+/**
+ * Monorepo verify gate: the default `npx playwright test` runs from the launch dir and
+ * can't resolve playwright in a non-hoisted pnpm monorepo — the same problem the MCP
+ * binPath fallback in mcp.mjs solves. Persist a resolved `testCommand` into the launch
+ * dir's config so pw-verify uses the e2e package's binary and config, unless the user
+ * already set one. No-op for a single-package repo (relE2e === '.').
+ * Returns `{ file, testCommand }` when written, or `null` when skipped.
+ */
+export function persistTestCommand({ launchDir, relE2e, binPath = null, fs: fsmod = fs }) {
+  if (relE2e === '.') return null;
+  const file = path.join(launchDir, CONFIG_FILENAME);
+  let userConfig = {};
+  try {
+    userConfig = JSON.parse(fsmod.readFileSync(file, 'utf8'));
+  } catch (e) {
+    if (e.code !== 'ENOENT') throw e;
+  }
+  if (userConfig.testCommand !== undefined) return null;
+  const testCommand = `${binPath ?? 'npx playwright'} test -c ${relE2e}`;
+  fsmod.writeFileSync(file, JSON.stringify({ ...userConfig, testCommand }, null, 2) + '\n');
+  return { file, testCommand };
+}

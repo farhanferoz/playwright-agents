@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { loadConfig } from './lib/config.mjs';
+import { loadConfig, persistTestCommand } from './lib/config.mjs';
 import { applyOverlay } from './lib/overlay.mjs';
 import { wireMcp, buildServerSpec } from './lib/mcp.mjs';
 
@@ -51,6 +51,14 @@ function main() {
   const serverSpec = buildServerSpec({ generatedDoc, relE2e, binPath });
   const mcp = wireMcp({ launchDir, serverSpec });
   log(`MCP wired → ${mcp.file} as '${mcp.server}'`);
+
+  // 3b. Monorepo verify gate: the default `npx playwright test` runs from the
+  // launch dir and can't resolve playwright in a non-hoisted pnpm monorepo —
+  // the same problem the MCP binPath fallback above solves. Persist a resolved
+  // testCommand so pw-verify uses the e2e package's binary and config, unless
+  // the user already set one.
+  const persisted = persistTestCommand({ launchDir, relE2e, binPath });
+  if (persisted) log(`persisted monorepo testCommand → ${persisted.file}: ${persisted.testCommand}`);
 
   // 4. Auth reminder (config-driven; setup does not fabricate credentials).
   log(`auth mode: ${config.auth.mode} (${config.auth.setupPath ?? config.auth.seedPath ?? 'n/a'})`);
