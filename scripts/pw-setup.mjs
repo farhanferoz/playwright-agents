@@ -2,19 +2,20 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 import { loadConfig, persistTestCommand } from './lib/config.mjs';
 import { applyOverlay } from './lib/overlay.mjs';
 import { wireMcp, buildServerSpec } from './lib/mcp.mjs';
 
 function log(msg) { process.stdout.write(`[pw-setup] ${msg}\n`); }
 
-function findAgentsDir(e2eDir) {
+export function findAgentsDir(e2eDir) {
   // Agents always live under the e2e package that init-agents ran in.
   const d = path.join(e2eDir, '.claude', 'agents');
   return fs.existsSync(d) ? d : null;
 }
 
-function main() {
+export function main() {
   const launchDir = process.cwd();
   const config = loadConfig(launchDir);
 
@@ -65,4 +66,8 @@ function main() {
   log('done. Relaunch Claude Code so the MCP server loads, then run /pw-author.');
 }
 
-main();
+// Run setup only when executed directly (node pw-setup.mjs), not when imported
+// by a test — so unit tests can import findAgentsDir/main without side effects.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
